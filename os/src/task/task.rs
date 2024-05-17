@@ -4,7 +4,10 @@ use crate::config::TRAP_CONTEXT_BASE;
 use crate::mm::{
     kernel_stack_position, MapPermission, MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE,
 };
+use crate::timer::get_time_ms;
 use crate::trap::{trap_handler, TrapContext};
+
+use crate::config::MAX_SYSCALL_NUM;
 
 /// The task control block (TCB) of a task.
 pub struct TaskControlBlock {
@@ -28,6 +31,12 @@ pub struct TaskControlBlock {
 
     /// Program break
     pub program_brk: usize,
+
+    /// times be called of syscall
+    pub syscall_times: [u32; MAX_SYSCALL_NUM],
+
+    /// the start_time of task
+    pub start_time:usize,
 }
 
 impl TaskControlBlock {
@@ -63,6 +72,8 @@ impl TaskControlBlock {
             base_size: user_sp,
             heap_bottom: user_sp,
             program_brk: user_sp,
+            syscall_times:[0;MAX_SYSCALL_NUM],
+            start_time:get_time_ms(),
         };
         // prepare TrapContext in user space
         let trap_cx = task_control_block.get_trap_cx();
@@ -96,6 +107,31 @@ impl TaskControlBlock {
             None
         }
     }
+
+    /// use memeory_set to mmap in tcb
+    pub fn mmap_tcb(&mut self,start:usize,len:usize,port:usize) -> isize{
+        let start_va = VirtAddr::from(start);
+        let end_va=VirtAddr::from(start+len);
+        let mut permission = MapPermission::from_bits((port as u8) << 1).unwrap();
+        permission.set(MapPermission::U, true);
+
+        //println!("-----------------[mmap_to_tcb's_memory_set]-------------------");
+        
+        let result = self.memory_set.insert_framed_area_return_conflicts(start_va, end_va, permission);
+        
+        //println!("got result in tcb's memroy_set :{}",result);
+        return result;
+    }
+
+    /// use memory_set to unmao in tcb
+    pub fn munmap_tcb(&mut self,start:usize,len:usize) -> isize{
+        let start_va = VirtAddr::from(start);
+        let end_va=VirtAddr::from(start+len);
+        let result = self.memory_set.remove_area_return_error(start_va,end_va);
+        
+        return result;
+    }
+
 }
 
 #[derive(Copy, Clone, PartialEq)]

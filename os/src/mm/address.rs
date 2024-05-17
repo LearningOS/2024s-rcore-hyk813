@@ -271,3 +271,9 @@ where
 }
 /// a simple range structure for virtual page number
 pub type VPNRange = SimpleRange<VirtPageNum>;
+
+impl VPNRange{
+    pub fn contain_pages(&self,test_page_num:VirtPageNum) -> bool {
+        return test_page_num >= self.l && test_page_num <= self.r;
+    }
+}

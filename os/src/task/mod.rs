@@ -14,8 +14,10 @@ mod switch;
 #[allow(clippy::module_inception)]
 mod task;
 
+use crate::config::MAX_SYSCALL_NUM;
 use crate::loader::{get_app_data, get_num_app};
 use crate::sync::UPSafeCell;
+use crate::timer::get_time_ms;
 use crate::trap::TrapContext;
 use alloc::vec::Vec;
 use lazy_static::*;
@@ -140,6 +142,7 @@ impl TaskManager {
             let mut inner = self.inner.exclusive_access();
             let current = inner.current_task;
             inner.tasks[next].task_status = TaskStatus::Running;
+            inner.tasks[next].start_time = get_time_ms();
             inner.current_task = next;
             let current_task_cx_ptr = &mut inner.tasks[current].task_cx as *mut TaskContext;
             let next_task_cx_ptr = &inner.tasks[next].task_cx as *const TaskContext;
@@ -201,4 +204,43 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 /// Change the current 'Running' task's program break
 pub fn change_program_brk(size: i32) -> Option<usize> {
     TASK_MANAGER.change_current_program_brk(size)
+}
+
+/// update syscall_times of taskinfo
+pub fn update_sys_times(id:usize){
+    let mut inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    inner.tasks[current].syscall_times[id]+=1;
+}
+
+///get_clone_taskinfo_in_tcb
+pub fn get_clone_of_info_in_tcb() -> ([u32; MAX_SYSCALL_NUM], usize,TaskStatus) {
+    let inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    let syscall_times = inner.tasks[current].syscall_times.clone();
+    let start_time  = inner.tasks[current].start_time.clone();
+    let status =  inner.tasks[current].task_status;
+
+    println!("Start_time:{0},status{1}",start_time,status as usize);
+
+
+    return (syscall_times,start_time,status);
+}
+
+/// finish mmap in current_task_addressspace
+pub fn current_task_mmap(start: usize, len: usize, port: usize) -> isize{
+    let mut inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+
+    //println!("--------------[mmap_to_current_tcb]---------------");
+    inner.tasks[current].mmap_tcb(start, len, port)
+}
+
+/// finish unmap in current_task_addressspace
+pub fn current_task_munmap(start:usize,len:usize)->isize{
+
+    let mut inner = TASK_MANAGER.inner.exclusive_access();
+    let current = inner.current_task;
+    inner.tasks[current].munmap_tcb(start, len)
+
 }
