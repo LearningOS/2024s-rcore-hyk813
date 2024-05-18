@@ -60,6 +60,40 @@ impl MemorySet {
             None,
         );
     }
+
+    /// return -1 if have conflicts
+    pub fn insert_framed_area_return_conflicts(
+        &mut self,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        permission: MapPermission,
+    )->isize{
+
+        let res =  self.push(
+            MapArea::new(start_va, end_va, MapType::Framed, permission),
+            None,
+        );
+        //println!("go result in memory_set_push:{}",res);
+        return res;
+    }
+
+    ///return -1 if generate error
+    pub fn remove_area_return_error(
+        &mut self,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+    )->isize{
+        let mut res = 0;
+        for area in self.areas.iter_mut(){
+            if area.contains(start_va,end_va){
+                if area.unmap(&mut self.page_table) !=0 {
+                    res = -1;
+                }
+            }
+        }  
+        return res;
+    }
+
     /// remove a area
     pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
@@ -75,12 +109,17 @@ impl MemorySet {
     /// Add a new MapArea into this MemorySet.
     /// Assuming that there are no conflicts in the virtual address
     /// space.
-    fn push(&mut self, mut map_area: MapArea, data: Option<&[u8]>) {
-        map_area.map(&mut self.page_table);
+    fn push(&mut self, mut map_area: MapArea, data: Option<&[u8]>) -> isize {
+        let res = map_area.map(&mut self.page_table);
+        if res != 0 {
+            println!("got result in memory_set_map:-1");
+            return -1;
+        }
         if let Some(data) = data {
             map_area.copy_data(&mut self.page_table, data);
         }
         self.areas.push(map_area);
+        return 0;
     }
     /// Mention that trampoline is not collected by areas.
     fn map_trampoline(&mut self) {
@@ -333,7 +372,18 @@ impl MapArea {
             map_perm: another.map_perm,
         }
     }
-    pub fn map_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
+
+    /// find vpnrange has these page
+    pub fn contains(&mut self,start_va: VirtAddr,end_va: VirtAddr) -> bool{
+        let start_vpn = VirtPageNum::from(start_va);
+        let end_vpn = VirtPageNum::from(end_va);
+        
+
+        return self.vpn_range.contain_pages(start_vpn)&&self.vpn_range.contain_pages(end_vpn);
+    }
+
+
+    pub fn map_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum)->isize {
         let ppn: PhysPageNum;
         match self.map_type {
             MapType::Identical => {
@@ -346,35 +396,45 @@ impl MapArea {
             }
         }
         let pte_flags = PTEFlags::from_bits(self.map_perm.bits).unwrap();
-        page_table.map(vpn, ppn, pte_flags);
+        page_table.map(vpn, ppn, pte_flags)
     }
-    pub fn unmap_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
+    pub fn unmap_one(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) ->isize {
         if self.map_type == MapType::Framed {
             self.data_frames.remove(&vpn);
         }
-        page_table.unmap(vpn);
+        page_table.unmap(vpn)
     }
-    pub fn map(&mut self, page_table: &mut PageTable) {
+    pub fn map(&mut self, page_table: &mut PageTable) ->isize {
         for vpn in self.vpn_range {
-            self.map_one(page_table, vpn);
+            let res =self.map_one(page_table, vpn);
+            if res!=0 {
+                //println!("got result in maparea_map_one:{}",res);
+                return -1;
+            }
         }
+        //println!("got result in maparea_map_one:{}",0);
+        return 0;
     }
-    pub fn unmap(&mut self, page_table: &mut PageTable) {
+    pub fn unmap(&mut self, page_table: &mut PageTable) ->isize {
+        let mut res  = 0;
         for vpn in self.vpn_range {
-            self.unmap_one(page_table, vpn);
+             if self.unmap_one(page_table, vpn)!=0 {
+                    res = -1;
+             }
         }
+        return res;
     }
     #[allow(unused)]
     pub fn shrink_to(&mut self, page_table: &mut PageTable, new_end: VirtPageNum) {
         for vpn in VPNRange::new(new_end, self.vpn_range.get_end()) {
-            self.unmap_one(page_table, vpn)
+            self.unmap_one(page_table, vpn);
         }
         self.vpn_range = VPNRange::new(self.vpn_range.get_start(), new_end);
     }
     #[allow(unused)]
     pub fn append_to(&mut self, page_table: &mut PageTable, new_end: VirtPageNum) {
         for vpn in VPNRange::new(self.vpn_range.get_end(), new_end) {
-            self.map_one(page_table, vpn)
+            self.map_one(page_table, vpn);
         }
         self.vpn_range = VPNRange::new(self.vpn_range.get_start(), new_end);
     }
