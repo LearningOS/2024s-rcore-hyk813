@@ -1,10 +1,11 @@
 //! Types related to task management & Functions for completely changing TCB
 use super::TaskContext;
 use super::{kstack_alloc, pid_alloc, KernelStack, PidHandle};
-use crate::config::TRAP_CONTEXT_BASE;
+use crate::config::{MAX_SYSCALL_NUM, TRAP_CONTEXT_BASE};
 use crate::fs::{File, Stdin, Stdout};
-use crate::mm::{MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
+use crate::mm::{MapPermission, MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::sync::UPSafeCell;
+use crate::timer::get_time_ms;
 use crate::trap::{trap_handler, TrapContext};
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
@@ -71,6 +72,18 @@ pub struct TaskControlBlockInner {
 
     /// Program break
     pub program_brk: usize,
+
+    /// task start_time
+    pub start_time:usize,
+
+    /// Times of a syscall be called
+    pub syscall_times:[u32; MAX_SYSCALL_NUM],
+
+    /// the priority for stride
+    pub priority:isize,
+
+    /// record stride
+    pub stride:isize,
 }
 
 impl TaskControlBlockInner {
@@ -93,6 +106,25 @@ impl TaskControlBlockInner {
             self.fd_table.push(None);
             self.fd_table.len() - 1
         }
+    }
+    
+    pub fn mmap_tcb(&mut self,start:usize,len:usize,port:usize) -> isize{
+        let start_va = VirtAddr::from(start);
+        let end_va=VirtAddr::from(start+len);
+        let mut permission = MapPermission::from_bits((port as u8) << 1).unwrap();
+        permission.set(MapPermission::U, true);
+        //println!("-----------------[mmap_to_tcb's_memory_set]-------------------");
+        let result = self.memory_set.insert_framed_area_return_conflicts(start_va, end_va, permission);
+        //println!("got result in tcb's memroy_set :{}",result);
+        return result;
+    }
+
+    pub fn mumap_tcb(&mut self,start:usize,len:usize) ->isize{
+        let start_va = VirtAddr::from(start);
+        let end_va=VirtAddr::from(start+len);
+        let result = self.memory_set.remove_area_return_error(start_va,end_va);
+        
+        return result;
     }
 }
 
@@ -135,6 +167,10 @@ impl TaskControlBlock {
                     ],
                     heap_bottom: user_sp,
                     program_brk: user_sp,
+                    start_time : get_time_ms(),
+                    syscall_times : [0;MAX_SYSCALL_NUM],
+                    priority:16,
+                    stride:0,
                 })
             },
         };
@@ -216,6 +252,10 @@ impl TaskControlBlock {
                     fd_table: new_fd_table,
                     heap_bottom: parent_inner.heap_bottom,
                     program_brk: parent_inner.program_brk,
+                    start_time : get_time_ms(),
+                    syscall_times : [0;MAX_SYSCALL_NUM],
+                    priority:16,
+                    stride:0,
                 })
             },
         });

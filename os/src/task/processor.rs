@@ -7,6 +7,8 @@
 use super::__switch;
 use super::{fetch_task, TaskStatus};
 use super::{TaskContext, TaskControlBlock};
+use crate::config::MAX_SYSCALL_NUM;
+use crate::fs::{Stat, StatMode};
 use crate::sync::UPSafeCell;
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
@@ -108,4 +110,56 @@ pub fn schedule(switched_task_cx_ptr: *mut TaskContext) {
     unsafe {
         __switch(switched_task_cx_ptr, idle_task_cx_ptr);
     }
+}
+
+/// get info in PROCESSOR
+pub fn get_current_processor_info() -> ([u32; MAX_SYSCALL_NUM], usize,TaskStatus){
+    let binding = PROCESSOR.exclusive_access().current().unwrap();
+    let inner = binding.inner_exclusive_access();
+    let start_time = inner.start_time;
+    let syscall_times = inner.syscall_times;
+    let status = inner.task_status;
+    println!("Start_time:{0},status{1}",start_time,status as usize);
+
+    return (syscall_times,start_time,status);
+}
+
+
+///update sys_call_times
+pub fn update_syscall_times(id:usize){
+    let binding = PROCESSOR.exclusive_access().current().unwrap();
+    let mut inner = binding.inner_exclusive_access();
+    inner.syscall_times[id]+=1;
+}
+
+/// finish mmap in current_processor_addressspace
+pub fn current_processor_mmap(start: usize, len: usize, port: usize) -> isize{
+    let binding = PROCESSOR.exclusive_access().current().unwrap();
+    let mut inner = binding.inner_exclusive_access();
+    //println!("--------------[mmap_to_current_tcb]---------------");
+    inner.mmap_tcb(start, len, port)
+}
+
+/// finish unmap in current_processor_addressspace
+pub fn current_processor_munmap(start: usize, len: usize) ->isize{
+    let binding = PROCESSOR.exclusive_access().current().unwrap();
+    let mut inner = binding.inner_exclusive_access();
+    inner.mumap_tcb(start, len)
+}
+
+
+/// get stat by fd
+pub fn current_processor_fstat(fd: usize)->Option<Stat>{
+    let task = current_task().unwrap();
+    let  inner = task.inner_exclusive_access();
+    if fd >= inner.fd_table.len(){
+        return None;
+    }
+    if let Some(file) = &inner.fd_table[fd] {
+        let file = file.clone();
+        let mut  stat =Stat::new(0, StatMode::NULL, 0);
+        file.get_stat(&mut stat);
+        return Some(stat);
+    }
+    None
 }
