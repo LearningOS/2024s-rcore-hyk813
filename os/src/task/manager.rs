@@ -3,7 +3,8 @@
 //! It is only used to manage processes and schedule process based on ready queue.
 //! Other CPU process monitoring functions are in Processor.
 
-use super::{ProcessControlBlock, TaskControlBlock, TaskStatus};
+
+use super::{ ProcessControlBlock, TaskControlBlock, TaskStatus};
 use crate::sync::UPSafeCell;
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::sync::Arc;
@@ -50,6 +51,7 @@ impl TaskManager {
         // case) so that we can simply replace it;
         self.stop_task = Some(task);
     }
+
 
 }
 
@@ -112,3 +114,4 @@ pub fn remove_from_pid2process(pid: usize) {
         panic!("cannot find pid {} in pid2task!", pid);
     }
 }
+

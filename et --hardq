@@ -1,0 +1,30 @@
+[33mf3f86fe[m[33m ([m[1;36mHEAD -> [m[1;32mch6[m[33m, [m[1;31morigin/ch6[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33mf3f86fe[m[33m ([m[1;36mHEAD -> [m[1;32mch6[m[33m, [m[1;31morigin/ch6[m[33m)[m HEAD@{1}: reset: moving to HEAD
+[33mf3f86fe[m[33m ([m[1;36mHEAD -> [m[1;32mch6[m[33m, [m[1;31morigin/ch6[m[33m)[m HEAD@{2}: reset: moving to HEAD
+[33mf3f86fe[m[33m ([m[1;36mHEAD -> [m[1;32mch6[m[33m, [m[1;31morigin/ch6[m[33m)[m HEAD@{3}: reset: moving to HEAD
+[33mf3f86fe[m[33m ([m[1;36mHEAD -> [m[1;32mch6[m[33m, [m[1;31morigin/ch6[m[33m)[m HEAD@{4}: commit: May finished ch6
+[33m45afa27[m HEAD@{5}: checkout: moving from ch5 to ch6
+[33m3273152[m[33m ([m[1;31morigin/ch5[m[33m, [m[1;32mch5[m[33m)[m HEAD@{6}: commit: add reports
+[33m9fcf3ed[m HEAD@{7}: commit: May finished ch5
+[33mf89487e[m HEAD@{8}: checkout: moving from ch5 to ch5
+[33mf89487e[m HEAD@{9}: checkout: moving from ch4 to ch5
+[33m43a88c4[m[33m ([m[1;31morigin/ch4[m[33m, [m[1;32mch4[m[33m)[m HEAD@{10}: checkout: moving from ch5 to ch4
+[33mf89487e[m HEAD@{11}: checkout: moving from ch4 to ch5
+[33m43a88c4[m[33m ([m[1;31morigin/ch4[m[33m, [m[1;32mch4[m[33m)[m HEAD@{12}: commit: finished some wrong
+[33m8c4b870[m HEAD@{13}: commit: finished some wrong
+[33m97f7409[m HEAD@{14}: commit: finished ch4 without reports
+[33m308477e[m HEAD@{15}: commit: finished ch4 but didn't write reports
+[33m1d370cb[m HEAD@{16}: checkout: moving from ch4 to ch4
+[33m1d370cb[m HEAD@{17}: checkout: moving from ch3 to ch4
+[33m23c73fe[m[33m ([m[1;31morigin/ch3[m[33m, [m[1;32mch3[m[33m)[m HEAD@{18}: commit: Finished ch3 report
+[33mffa7a21[m HEAD@{19}: commit: Maybe Finished ch3
+[33maca7c12[m HEAD@{20}: checkout: moving from ch3 to ch3
+[33maca7c12[m HEAD@{21}: checkout: moving from ch2 to ch3
+[33m7043f95[m[33m ([m[1;31morigin/ch2[m[33m, [m[1;32mch2[m[33m)[m HEAD@{22}: reset: moving to HEAD
+[33m7043f95[m[33m ([m[1;31morigin/ch2[m[33m, [m[1;32mch2[m[33m)[m HEAD@{23}: checkout: moving from ch3 to ch2
+[33maca7c12[m HEAD@{24}: checkout: moving from ch2 to ch3
+[33m7043f95[m[33m ([m[1;31morigin/ch2[m[33m, [m[1;32mch2[m[33m)[m HEAD@{25}: checkout: moving from ch1 to ch2
+[33ma2c3968[m[33m ([m[1;31morigin/ch1[m[33m, [m[1;32mch1[m[33m)[m HEAD@{26}: checkout: moving from ch2 to ch1
+[33m7043f95[m[33m ([m[1;31morigin/ch2[m[33m, [m[1;32mch2[m[33m)[m HEAD@{27}: checkout: moving from ch1 to ch2
+[33ma2c3968[m[33m ([m[1;31morigin/ch1[m[33m, [m[1;32mch1[m[33m)[m HEAD@{28}: checkout: moving from main to ch1
+[33mb1c4c75[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{29}: clone: from https://github.com/LearningOS/2024s-rcore-hyk813.git
